@@ -18,21 +18,21 @@ def simulate_l_b_coverage(Npoints,MW_exclusion=10,ra_range=(-180,180),dec_range=
         """
         ra = N.random.random(Npoints_)*(ra_range_[1] - ra_range_[0]) + ra_range_[0]
         dec = N.arcsin(N.random.random(Npoints_)*(dec_sin_range_[1] - dec_sin_range_[0]) + dec_sin_range_[0]) / Bt._d2r
-        if Npoints_==1:
-            return ra[0],dec[0]
+
         return ra,dec
 
     def _draw_without_MW_(Npoints_,ra_range_,dec_sin_range_,MW_exclusion_):
         """
         """
-        l,b = [],[]
-        while( len(l)< Npoints_ ):
-            ra,dec = _draw_radec_(1,ra_range,dec_sin_range)
+        
+        l,b = N.array([]),N.array([])
+        while( len(l) < Npoints_ ):
+            ra,dec = _draw_radec_(Npoints_ - len(l),ra_range_,dec_sin_range_)
             l_,b_ = Bt.radec2gcs(ra,dec)
-            if N.abs(b_) > MW_exclusion_:
-                l.append(l_)
-                b.append(b_)
-        return N.asarray(l),N.asarray(b)
+            l = N.concatenate((l,l_[N.abs(b_)>MW_exclusion_]))
+            b = N.concatenate((b,b_[N.abs(b_)>MW_exclusion_]))
+
+        return l,b
 
     # ----------------------- #
     # --                   -- #
