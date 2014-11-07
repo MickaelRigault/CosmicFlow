@@ -42,7 +42,7 @@ def simulate_l_b_coverage(Npoints,MW_exclusion=10,ra_range=(-180,180),dec_range=
         raise ValueError('ra_range must be contained in [-180,180]')
 
     if dec_range[0] < -90 or dec_range[1] > 90 or dec_range[0] > dec_range[1]:
-        raise ValueError('ra_range must be contained in [-180,180]')
+        raise ValueError('dec_range must be contained in [-180,180]')
 
     dec_sin_range = (N.sin(dec_range[0]*Bt._d2r),N.sin(dec_range[1]*Bt._d2r)) 
 
@@ -97,7 +97,8 @@ def simulate_Dipole_mu(redshits,coords,Dipole,
 
     
 def Simulate_Cosmic_flow_Supernovae(redshift_range,Dipole=[0,0,1000],Npoints=1000,
-                                coverage="full_sky",**kwargs):
+                                    ra_range=(-180,180),dec_range=(-90,90),MW_exclusion=10,
+                                    **kwargs):
     """
     redshift_range = [zmin,zmax]
     Dipole=[l_dipole,b_dipole,amplitude_Dipole_in_km/s]
@@ -109,7 +110,7 @@ def Simulate_Cosmic_flow_Supernovae(redshift_range,Dipole=[0,0,1000],Npoints=100
     
     redshifts   = N.random.random(Npoints)*(N.max(redshift_range) - N.min(redshift_range)) + N.min(redshift_range)
 
-    l_sim,b_sim = simulate_l_b_coverage(Npoints,coverage)
+    l_sim,b_sim = simulate_l_b_coverage(Npoints,MW_exclusion,ra_range,dec_range)
     Coords_sim = N.asarray([l_sim,b_sim]).T
     mu_simulate,dmu_simulate = simulate_Dipole_mu(redshifts, Coords_sim, Dipole,**kwargs)
     
