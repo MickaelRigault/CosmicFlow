@@ -54,7 +54,7 @@ def dipole_comp(l,b):
 def convert_spherical(Dipole_cartesian_velocity, cov=None):
     """
     Convert fit results in Cartesian coordinates to spherical coordinates 
-    (angles in degrees). Convariance matrix can be converted as well
+    (angles in degrees). Covariance matrix can be converted as well
     if it is stated.
     """
     x = Dipole_cartesian_velocity[0]
@@ -62,7 +62,7 @@ def convert_spherical(Dipole_cartesian_velocity, cov=None):
     z = Dipole_cartesian_velocity[2] 
 
     v = N.sqrt(x**2 + y**2 + z**2)
-    v_sph = N.array([v, (N.arctan2(y,x) / _d2r) % 360, 
+    v_sph = N.array([v, (N.arctan2(y,x) / _d2r + 180) % 360 - 180, 
                           N.arcsin(z/v) / _d2r])
     
     if cov is None:
