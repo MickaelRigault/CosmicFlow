@@ -7,7 +7,8 @@ import Basic_tools  as Bt
 import Sample_tools as St
 
 
-def simulate_l_b_coverage(Npoints,MW_exclusion=10,ra_range=(-180,180),dec_range=(-90,90)):
+def simulate_l_b_coverage(Npoints,MW_exclusion=10,ra_range=(-180,180),dec_range=(-90,90),
+                          output_frame='galactic'):
     """
     """
     # ----------------------- #
@@ -29,14 +30,21 @@ def simulate_l_b_coverage(Npoints,MW_exclusion=10,ra_range=(-180,180),dec_range=
         while( len(l) < Npoints_ ):
             ra,dec = _draw_radec_(Npoints_ - len(l),ra_range_,dec_sin_range_)
             l_,b_ = Bt.radec2gcs(ra,dec)
-            l = N.concatenate((l,l_[N.abs(b_)>MW_exclusion_]))
-            b = N.concatenate((b,b_[N.abs(b_)>MW_exclusion_]))
+            if output_frame == 'galactic':
+                l = N.concatenate((l,l_[N.abs(b_)>MW_exclusion_]))
+                b = N.concatenate((b,b_[N.abs(b_)>MW_exclusion_]))
+            else:
+                l = N.concatenate((l,ra[N.abs(b_)>MW_exclusion_]))
+                b = N.concatenate((b,dec[N.abs(b_)>MW_exclusion_]))                
 
         return l,b
 
     # ----------------------- #
     # --                   -- #
     # ----------------------- #
+
+    if output_frame not in ['galactic','j2000']:
+        raise ValueError('output_frame must "galactic" or "j2000"')
 
     if ra_range[0] < -180 or ra_range[1] > 180 or ra_range[0] > ra_range[1]:
         raise ValueError('ra_range must be contained in [-180,180]')
@@ -50,7 +58,10 @@ def simulate_l_b_coverage(Npoints,MW_exclusion=10,ra_range=(-180,180),dec_range=
         return _draw_without_MW_(Npoints,ra_range,dec_sin_range,MW_exclusion)
     else:
         ra,dec = _draw_radec_(Npoints,ra_range,dec_sin_range)
-        return Bt.radec2gcs(ra,dec)
+        if output_frame == 'galactic':
+            return Bt.radec2gcs(ra,dec)
+        else:
+            return ra,dec
 
 
 
