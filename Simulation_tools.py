@@ -7,52 +7,61 @@ import Basic_tools  as Bt
 import Sample_tools as St
 
 
-
-def simulate_l_b_coverage(Npoints,coverage="full_sky",
-                          pole_sky_exclision=50.):
+def simulate_l_b_coverage(Npoints,MW_exclusion=10,ra_range=(-180,180),dec_range=(-90,90),
+                          output_frame='galactic'):
     """
     """
     # ----------------------- #
     # --                   -- #
     # ----------------------- #
-    def _draw_lb_(Npoints_):
+    def _draw_radec_(Npoints_,ra_range_,dec_sin_range_):
         """
         """
-        l = N.random.random(Npoints_)*360. - 180
-        b = N.arcsin(N.random.random(Npoints_)*2. - 1) / Bt._d2r
-        if Npoints_==1:
-            return l[0],b[0]
-        return l,b
+        ra = N.random.random(Npoints_)*(ra_range_[1] - ra_range_[0]) + ra_range_[0]
+        dec = N.arcsin(N.random.random(Npoints_)*(dec_sin_range_[1] - dec_sin_range_[0]) + dec_sin_range_[0]) / Bt._d2r
 
-    def _hemisphere_sky_(To_exclude_coords_lb):
+        return ra,dec
+
+    def _draw_without_MW_(Npoints_,ra_range_,dec_sin_range_,MW_exclusion_):
         """
         """
-        l,b = [],[]
-        while( len(l)< Npoints ):
-            l_,b_ = _draw_lb_(1)
-            if Bt.ang_sep(l_,b_,To_exclude_coords_lb[0],To_exclude_coords_lb[1],in_radian=False)>pole_sky_exclision:
-                l.append(l_)
-                b.append(b_)
+        
+        l,b = N.array([]),N.array([])
+        while( len(l) < Npoints_ ):
+            ra,dec = _draw_radec_(Npoints_ - len(l),ra_range_,dec_sin_range_)
+            l_,b_ = Bt.radec2gcs(ra,dec)
+            if output_frame == 'galactic':
+                l = N.concatenate((l,l_[N.abs(b_)>MW_exclusion_]))
+                b = N.concatenate((b,b_[N.abs(b_)>MW_exclusion_]))
+            else:
+                l = N.concatenate((l,ra[N.abs(b_)>MW_exclusion_]))
+                b = N.concatenate((b,dec[N.abs(b_)>MW_exclusion_]))                
+
         return l,b
 
     # ----------------------- #
     # --                   -- #
     # ----------------------- #
-    
-    if coverage.lower() == "full_sky":
-        # -- ALL SKY -- #
-        return _draw_lb_(Npoints)
-    
-    elif coverage.lower() == "northern_sky":
-        # -- NORTHEN SKY -- #
-        return _hemisphere_sky_(Bt.South_lb)
-    
-    elif coverage.lower() == "southern_sky":
-        # -- SOUTHERN SKY -- #
-        return _hemisphere_sky_(Bt.North_lb)
-    
+
+    if output_frame not in ['galactic','j2000']:
+        raise ValueError('output_frame must "galactic" or "j2000"')
+
+    if ra_range[0] < -180 or ra_range[1] > 180 or ra_range[0] > ra_range[1]:
+        raise ValueError('ra_range must be contained in [-180,180]')
+
+    if dec_range[0] < -90 or dec_range[1] > 90 or dec_range[0] > dec_range[1]:
+        raise ValueError('dec_range must be contained in [-180,180]')
+
+    dec_sin_range = (N.sin(dec_range[0]*Bt._d2r),N.sin(dec_range[1]*Bt._d2r)) 
+
+    if MW_exclusion > 0.:
+        return _draw_without_MW_(Npoints,ra_range,dec_sin_range,MW_exclusion)
     else:
-        raise ValueError("Only 'full_sky'/'northern_sky'/'southern_sky' coverage have been implemented (%s requested)."%coverage)
+        ra,dec = _draw_radec_(Npoints,ra_range,dec_sin_range)
+        if output_frame == 'galactic':
+            return Bt.radec2gcs(ra,dec)
+        else:
+            return ra,dec
 
 
 
@@ -99,7 +108,8 @@ def simulate_Dipole_mu(redshits,coords,Dipole,
 
     
 def Simulate_Cosmic_flow_Supernovae(redshift_range,Dipole=[0,0,1000],Npoints=1000,
-                                coverage="full_sky",**kwargs):
+                                    ra_range=(-180,180),dec_range=(-90,90),MW_exclusion=10,
+                                    **kwargs):
     """
     redshift_range = [zmin,zmax]
     Dipole=[l_dipole,b_dipole,amplitude_Dipole_in_km/s]
@@ -111,7 +121,7 @@ def Simulate_Cosmic_flow_Supernovae(redshift_range,Dipole=[0,0,1000],Npoints=100
     
     redshifts   = N.random.random(Npoints)*(N.max(redshift_range) - N.min(redshift_range)) + N.min(redshift_range)
 
-    l_sim,b_sim = simulate_l_b_coverage(Npoints,coverage)
+    l_sim,b_sim = simulate_l_b_coverage(Npoints,MW_exclusion,ra_range,dec_range)
     Coords_sim = N.asarray([l_sim,b_sim]).T
     mu_simulate,dmu_simulate = simulate_Dipole_mu(redshifts, Coords_sim, Dipole,**kwargs)
     
